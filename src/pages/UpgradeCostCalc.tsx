@@ -1,18 +1,55 @@
 import React from 'react'
-import { UpgradeSelections, buyers, makers, sellers, utility } from '../components'
+import { Input, UpgradeSelections, buyers, makers, sellers, useLocalStorage, utility } from '../components'
 
 interface UpgradesPageProps {}
 
 export const UpgradesPage: React.FC<UpgradesPageProps> = () => {
-    const [current, setCurrent] = React.useState<number[]>(new Array(37).fill(0))
-    const [proposed, setProposed] = React.useState<number[]>(new Array(37).fill(0))
+    const [factory, setFactory] = useLocalStorage('factory', 'A')
+    const [current, setCurrent] = useLocalStorage(factory, new Array(37).fill(0))
+    const [proposed, setProposed] = React.useState<number[]>(current)
 
-    const [money, setMoney] = React.useState('')
-    const [income, setIncome] = React.useState('')
+    const [money, setMoney] = useLocalStorage('money', '')
+    const [income, setIncome] = useLocalStorage('income', '')
+    const [tickrate, setTickrate] = useLocalStorage('tickrate', 5)
 
     return (
         <div className='mx-20 mb-40 mt-8'>
             <h1 className='text-2xl font-bold'>Cost for Upgrades</h1>
+
+            <div className='text-gray-700'>
+                <span>Factory: </span>
+                <button
+                    data-select={factory}
+                    onClick={() => setFactory('A')}
+                    className='px-2 hover:italic data-[select=A]:font-bold'
+                >
+                    A
+                </button>
+                |
+                <button
+                    data-select={factory}
+                    onClick={() => setFactory('B')}
+                    className='px-2 hover:italic data-[select=B]:font-bold'
+                >
+                    B
+                </button>
+                |
+                <button
+                    data-select={factory}
+                    onClick={() => setFactory('C')}
+                    className='px-2 hover:italic data-[select=C]:font-bold'
+                >
+                    C
+                </button>
+                |
+                <button
+                    data-select={factory}
+                    onClick={() => setFactory('D')}
+                    className='px-2 hover:italic data-[select=D]:font-bold'
+                >
+                    D
+                </button>
+            </div>
 
             <h2 className='mt-2 text-lg font-semibold'>Current Upgrades</h2>
             <UpgradeSelections value={current} setter={setCurrent} />
@@ -22,36 +59,58 @@ export const UpgradesPage: React.FC<UpgradesPageProps> = () => {
 
             <h2 className='mt-2 text-lg font-semibold'>Proposed Upgrades</h2>
             <UpgradeSelections value={proposed} setter={setProposed} />
-            <ResetButton levels={proposed} resetter={setProposed} />
+            <ResetButton levels={proposed} other={current} resetter={setProposed} />
 
             <hr className='my-8' />
 
             <h2 className='mt-2 text-lg font-semibold'>What it'll cost</h2>
-            <span>{`You still need: $${calculateTotalCosts(proposed) - calculateTotalCosts(current)}`}</span>
-            <div className='flex items-center'>
-                <span className='mr-2'>How much money do you have?</span>
-                $
-                <input
-                    type='text'
+            <div className='flex flex-col gap-1'>
+                <span>{`You still need: $${prettyPrintNumb(
+                    calculateTotalCosts(proposed) - calculateTotalCosts(current)
+                )}`}</span>
+                <Input
+                    label='Money:'
+                    before='$'
                     value={money}
-                    onChange={ev => {
-                        if (ev.target.value.match(/^(|[0-9]*\.?[0-9]*(K|M|B|t|q)?)$/)) setMoney(ev.target.value)
+                    onChange={info => {
+                        if (info.value.match(/^(|[0-9]*\.?[0-9]*(K|M|B|t|q)?)$/)) setMoney(info.value)
                     }}
-                    className='rounded border-gray-400 p-0 px-2'
                 />
-            </div>
-            <div className='flex items-center'>
-                <span className='mr-2'>How much money do you make?</span>
-                $
-                <input
-                    type='text'
+                <Input
+                    label='Income:'
+                    before='$'
+                    after='/tick'
                     value={income}
-                    onChange={ev => {
-                        if (ev.target.value.match(/^(|[0-9]*\.?[0-9]*(K|M|B|t|q)?)$/)) setIncome(ev.target.value)
+                    onChange={info => {
+                        if (info.value.match(/^(|[0-9]*\.?[0-9]*(K|M|B|t|q)?)$/)) setIncome(info.value)
                     }}
-                    className='rounded border-gray-400 p-0 px-2'
                 />
-                /tick
+                <div className='flex items-center'>
+                    <span>Ticks/second: </span>
+                    <select
+                        value={tickrate}
+                        onChange={ev => setTickrate(parseInt(ev.target.value))}
+                        className='rounded border-gray-400 py-0'
+                    >
+                        <option>5</option>
+                        <option>6</option>
+                        <option>7</option>
+                        <option>8</option>
+                        <option>9</option>
+                        <option>10</option>
+                        <option>11</option>
+                        <option>12</option>
+                        <option>13</option>
+                        <option>14</option>
+                        <option>15</option>
+                    </select>
+                </div>
+                <div>{`It will take ${prettyPrintTimeUntil(
+                    tickrate,
+                    income,
+                    calculateTotalCosts(proposed) - calculateTotalCosts(current),
+                    money
+                )}`}</div>
             </div>
         </div>
     )
@@ -59,18 +118,29 @@ export const UpgradesPage: React.FC<UpgradesPageProps> = () => {
 
 interface ResetButtonProps {
     levels: number[]
+    other?: number[]
     resetter: (_: number[]) => void
 }
 
-export const ResetButton: React.FC<ResetButtonProps> = ({ levels, resetter }) => (
+export const ResetButton: React.FC<ResetButtonProps> = ({ levels, other, resetter }) => (
     <div className='flex w-full justify-between'>
         <span>{`Total cost: $${prettyTotalCost(levels)}`}</span>
-        <button
-            className='rounded border border-gray-300 px-2.5 py-0.5 text-gray-600 hover:border-red-300 hover:bg-red-100 hover:text-red-500'
-            onClick={() => resetter(new Array(37).fill(0))}
-        >
-            Reset
-        </button>
+        <div className='flex gap-2'>
+            {other && (
+                <button
+                    className='rounded border border-gray-300 px-2.5 py-0.5 text-gray-600 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-500'
+                    onClick={() => resetter(other)}
+                >
+                    Copy from Above
+                </button>
+            )}
+            <button
+                className='rounded border border-gray-300 px-2.5 py-0.5 text-gray-600 hover:border-red-300 hover:bg-red-100 hover:text-red-500'
+                onClick={() => resetter(new Array(37).fill(0))}
+            >
+                Reset
+            </button>
+        </div>
     </div>
 )
 
@@ -81,15 +151,14 @@ const calculateCost = (s: string): number => {
     let numb = s
     if (!s.at(-1)?.match(/[0-9]/)) {
         const abbreviation = s.at(-1) || ''
-        if (!abbrevMap[abbreviation]) {
+        if (!abbrevMap[abbreviation] && abbreviation !== '.') {
             console.log(`Recieved: '${s}' - the abbreviation '${abbreviation}' is not known`)
             return -1
         }
-        mult = abbrevMap[abbreviation]
+        mult = abbrevMap[abbreviation] || 1
         numb = s.substring(0, s.length - 1)
     }
-    console.log(s, mult, numb, parseInt(numb) * mult)
-    return parseInt(numb) * mult
+    return parseFloat(numb) * mult
 }
 
 const calculateTotalCosts = (list: number[]): number => {
@@ -113,9 +182,12 @@ const prettyTotalCost = (list: number[]): string => {
     return prettyPrintNumb(cost)
 }
 
+const goodRange = (n: number, lr: number = 1, ur: number = 1000): boolean => n >= lr && n < ur
+
 const prettyPrintNumb = (n: number): string => {
-    const goodRange = (n: number, lr: number = 1, ur: number = 1000): boolean => n >= lr && n < ur
-    if (goodRange(n / abbrevMap.q)) {
+    if (n < 0) {
+        return '0'
+    } else if (goodRange(n / abbrevMap.q)) {
         return `${n / abbrevMap.q}`.substring(0, 5) + ' quadrillion'
     } else if (goodRange(n / abbrevMap.t)) {
         return `${n / abbrevMap.t}`.substring(0, 5) + ' trillion'
@@ -135,3 +207,25 @@ const abbrevMap: Record<string, number> = {
     t: 1000000000000,
     q: 1000000000000000,
 }
+
+const calculateSecondsUntil = (tickrate: number, income: number, target: number, current: number = 0): number =>
+    Math.ceil((target - current) / income / tickrate)
+
+const prettyPrintTime = (seconds: number): string => {
+    if (isNaN(seconds) || !isFinite(seconds)) {
+        return 'more information to work out how long...'
+    } else if (seconds < 0) {
+        return 'no more time at all!'
+    } else if (goodRange(seconds, 0, 60)) {
+        return `${Math.round((seconds + Number.EPSILON) * 100) / 100}` + ' seconds'
+    } else if (goodRange(seconds / 60, 1, 60)) {
+        return `${Math.round((seconds / 60 + Number.EPSILON) * 100) / 100}` + ' minutes'
+    } else if (goodRange(seconds / 60 / 60, 1, 24)) {
+        return `${Math.round((seconds / 60 / 60 + Number.EPSILON) * 100) / 100}` + ' hours'
+    } else {
+        return `${Math.round((seconds / 60 / 60 / 24 + Number.EPSILON) * 100) / 100}` + ' days'
+    }
+}
+
+const prettyPrintTimeUntil = (tickrate: number, income: string, target: number, current: string = '-'): string =>
+    prettyPrintTime(calculateSecondsUntil(tickrate, calculateCost(income), target, calculateCost(current)))

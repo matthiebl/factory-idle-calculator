@@ -1,5 +1,38 @@
+import React from 'react'
+
+export * from './Input'
 export * from './Upgrade'
 export * from './UpgradeSelection'
+
+export const useLocalStorage = (key: string, defaultValue: Object) => {
+    const [value, setValue] = React.useState(() => {
+        try {
+            const saved = localStorage.getItem(key)
+            if (saved !== null) {
+                return JSON.parse(saved)
+            }
+            return defaultValue
+        } catch {
+            return defaultValue
+        }
+    })
+
+    React.useEffect(() => {
+        const rawValue = JSON.stringify(value)
+        localStorage.setItem(key, rawValue)
+    }, [value])
+
+    React.useEffect(() => {
+        const saved = localStorage.getItem(key)
+        if (saved !== null) {
+            setValue(JSON.parse(saved))
+        } else {
+            setValue(defaultValue)
+        }
+    }, [key])
+
+    return [value, setValue]
+}
 
 export type UpgradeT = {
     id: number
