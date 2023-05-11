@@ -16,40 +16,7 @@ export const UpgradesPage: React.FC<UpgradesPageProps> = () => {
         <div className='mx-20 mb-40 mt-8'>
             <h1 className='text-2xl font-bold'>Cost for Upgrades</h1>
 
-            <div className='text-gray-700'>
-                <span>Factory: </span>
-                <button
-                    data-select={factory}
-                    onClick={() => setFactory('A')}
-                    className='px-2 hover:italic data-[select=A]:font-bold'
-                >
-                    A
-                </button>
-                |
-                <button
-                    data-select={factory}
-                    onClick={() => setFactory('B')}
-                    className='px-2 hover:italic data-[select=B]:font-bold'
-                >
-                    B
-                </button>
-                |
-                <button
-                    data-select={factory}
-                    onClick={() => setFactory('C')}
-                    className='px-2 hover:italic data-[select=C]:font-bold'
-                >
-                    C
-                </button>
-                |
-                <button
-                    data-select={factory}
-                    onClick={() => setFactory('D')}
-                    className='px-2 hover:italic data-[select=D]:font-bold'
-                >
-                    D
-                </button>
-            </div>
+            <FactoryButtons factory={factory} setFactory={setFactory} />
 
             <h2 className='mt-2 text-lg font-semibold'>Current Upgrades</h2>
             <UpgradeSelections value={current} setter={setCurrent} />
@@ -141,6 +108,56 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ levels, other, resette
                 Reset
             </button>
         </div>
+    </div>
+)
+
+interface FactoryButtonsProps {
+    factory: string
+    setFactory: (_: string) => void
+}
+
+export const FactoryButtons: React.FC<FactoryButtonsProps> = ({ factory, setFactory }) => (
+    <div className='text-gray-700'>
+        <span>Factory: </span>
+        <button
+            data-select={factory}
+            onClick={() => setFactory('A')}
+            className='px-2 hover:italic data-[select=A]:font-bold'
+        >
+            A
+        </button>
+        |
+        <button
+            data-select={factory}
+            onClick={() => setFactory('B')}
+            className='px-2 hover:italic data-[select=B]:font-bold'
+        >
+            B
+        </button>
+        |
+        <button
+            data-select={factory}
+            onClick={() => setFactory('C')}
+            className='px-2 hover:italic data-[select=C]:font-bold'
+        >
+            C
+        </button>
+        |
+        <button
+            data-select={factory}
+            onClick={() => setFactory('D')}
+            className='px-2 hover:italic data-[select=D]:font-bold'
+        >
+            D
+        </button>
+        |
+        <button
+            data-select={factory}
+            onClick={() => setFactory('E')}
+            className='px-2 hover:italic data-[select=E]:font-bold'
+        >
+            E
+        </button>
     </div>
 )
 
